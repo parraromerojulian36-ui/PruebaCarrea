@@ -1,0 +1,8 @@
+body { margin: 0; overflow: hidden; font-family: sans-serif; }
+#info-box {
+    position: absolute; bottom: 30px; left: 5%; width: 90%;
+    background: rgba(0,0,0,0.85); color: white;
+    padding: 20px; border-radius: 15px;
+    display: none; z-index: 1000; text-align: center;
+}
+button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }

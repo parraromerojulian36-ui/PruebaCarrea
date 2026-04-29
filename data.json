@@ -1,0 +1,16 @@
+[
+    {
+        "id": "punto-1",
+        "lat": 4.3361,
+        "lon": -74.3638,
+        "title": "Entrada Principal",
+        "info": "¡Has llegado! Esta es la pista inicial de la carrera."
+    },
+    {
+        "id": "punto-2",
+        "lat": 4.3365,
+        "lon": -74.3640,
+        "title": "Zona Deportiva",
+        "info": "Excelente. La siguiente pista está hacia el norte."
+    }
+]
