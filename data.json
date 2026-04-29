@@ -12,5 +12,13 @@
         "lon": -74.3640,
         "title": "Zona Deportiva",
         "info": "Excelente. La siguiente pista está hacia el norte."
+    },
+
+    {
+        "id": "punto-prueba",
+        "lat": 4.336100, 
+        "lon": -74.363800,
+        "title": "Punto de Prueba",
+        "info": "Si ves esto, ¡tu AR funciona!"
     }
 ]
