@@ -1,76 +1,69 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Carrera de Observación - ADSO</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script type="module" src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-location-only.mjs"></script>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false;'>
 
-    <style>
-        body { margin: 0; overflow: hidden; }
-        /* UI: Mapa */
-        #map { position: absolute; top: 10px; left: 10px; width: 35%; height: 25%; z-index: 1000; border: 2px solid white; border-radius: 10px; }
-        /* UI: Contador de distancia */
-        #distancia { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; z-index: 1000; font-family: sans-serif; border-radius: 5px; }
-    </style>
-</head>
-
-<body>
-
-    <div id="map"></div>
-    <div id="distancia">Calculando...</div>
-
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+    <a-entity id="punto-interes" 
+              class="clickable"
+              gps-entity-place="latitude: 4.2811; longitude: -74.3642;"
+              data-info="¡Encontraste el cofre! Contiene: 100 puntos.">
         
-        <a-entity light="type: hemisphere; color: #ffffff; groundColor: #ffffff; intensity: 3.0"></a-entity>
-        <a-entity light="type: ambient; intensity: 1.5"></a-entity>
+        <a-entity id="beacon">
+            <a-cylinder color="#00FFFF" height="300" radius="0.5" 
+                        material="opacity: 0.6; transparent: true; shader: flat;" 
+                        position="0 150 0"></a-cylinder>
+            <a-ring color="#00FFFF" radius-inner="0.5" radius-outer="2" 
+                    rotation="-90 0 0" material="opacity: 0.9; transparent: true;"></a-ring>
+        </a-entity>
 
-        <a-camera gps-camera rotation-reader>
-            <a-entity cursor="rayOrigin: mouse" raycaster="objects: .interactuable"></a-entity>
-        </a-camera>
+        <a-box id="objeto-interactivo" 
+               color="#FF4444" scale="3 3 3" position="0 1.5 0" 
+               visible="false"></a-box>
+    </a-entity>
 
-        <a-gltf-model 
-            src="cofre.glb" 
-            class="interactuable"
-            scale="2 2 2" 
-            gps-entity-place="latitude: 4.3080264605938385; longitude: -74.29889583728055"
-            onclick="abrirCofre()">
-        </a-gltf-model>
-    </a-scene>
+    <a-camera gps-camera rotation-reader></a-camera>
+</a-scene>
 
-    <script>
-        // Coordenadas del Cofre
-        const targetLat = 4.3080264605938385;
-        const targetLon = -74.29889583728055;
+<script>
+    // Configuración del juego
+    const DISTANCIA_ACTIVACION = 15; // 15 metros
+    const puntoInteres = document.getElementById('punto-interes');
+    const beacon = document.getElementById('beacon');
+    const cofre = document.getElementById('objeto-interactivo');
 
-        // --- Lógica del Mapa ---
-        const map = L.map('map').setView([targetLat, targetLon], 18);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        L.marker([targetLat, targetLon]).addTo(map).bindPopup("¡Cofre aquí!");
+    // Función Haversine para calcular distancia
+    function calcularDistancia(lat1, lon1, lat2, lon2) {
+        const R = 6371e3;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
 
-        // --- Lógica de Distancia ---
-        navigator.geolocation.watchPosition((position) => {
-            const userLat = position.coords.latitude;
-            const userLon = position.coords.longitude;
-            
-            // Cálculo simple de distancia en metros
-            const R = 6371000; 
-            const dLat = (targetLat - userLat) * Math.PI / 180;
-            const dLon = (targetLon - userLon) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(userLat * Math.PI/180) * Math.cos(targetLat * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            const distancia = Math.round(R * c);
+    // Bucle de comprobación
+    setInterval(() => {
+        // Obtenemos la posición actual del usuario desde el gps-camera
+        const camera = document.querySelector('a-camera').components['gps-camera'];
+        const userPos = camera.currentCoords; // Coordenadas del usuario
+        
+        if (userPos) {
+            // Obtenemos las coordenadas del punto de interés
+            // Nota: gps-entity-place no actualiza atributos de objeto, 
+            // así que deberías guardar las coordenadas en variables JS para comparación
+            const targetLat = 4.2811;
+            const targetLon = -74.3642;
 
-            document.getElementById('distancia').innerText = "Distancia: " + distancia + " m";
-        });
+            const dist = calcularDistancia(userPos.latitude, userPos.longitude, targetLat, targetLon);
 
-        // --- Lógica de Interacción ---
-        function abrirCofre() {
-            alert("¡FELICITACIONES! Has encontrado el tesoro. El código del reto es: ADSO-2026");
+            // Lógica de visibilidad
+            if (dist < DISTANCIA_ACTIVACION) {
+                // Estamos cerca: Ocultar rayo, mostrar objeto
+                beacon.setAttribute('visible', 'false');
+                cofre.setAttribute('visible', 'true');
+            } else {
+                // Estamos lejos: Mostrar rayo, ocultar objeto
+                beacon.setAttribute('visible', 'true');
+                cofre.setAttribute('visible', 'false');
+            }
         }
-    </script>
-</body>
-</html>
+    }, 2000); // Se ejecuta cada 2000ms (2 segundos)
+</script>
